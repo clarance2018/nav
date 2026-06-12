@@ -1,9 +1,9 @@
 /**
  * Navigation 便签和待办功能模块
- * 功能：便签管理、待办事项管理（核心数据层）
+ * 功能：便签管理、待办事项管理（按需注入版本）
  * 存储：localStorage
  * 作者：雷布斯工程师
- * 版本：1.0.0
+ * 版本：2.0.0
  */
 
 // ==================== 便签管理器 ====================
@@ -336,11 +336,547 @@ class TodoManager {
   }
 }
 
-// ==================== 初始化 ====================
-// 创建全局实例
-window.notesManager = new NotesManager()
-window.todoManager = new TodoManager()
+// ==================== UI管理器 ====================
+class NotesTodoUI {
+  constructor() {
+    this.notesManager = new NotesManager()
+    this.todoManager = new TodoManager()
+    this.notesInjected = false
+    this.todoInjected = false
+    this.init()
+  }
 
-console.log('NotesTodoUI: 数据层初始化完成')
-console.log('NotesTodoUI: 便签数量:', window.notesManager.notes.length)
-console.log('NotesTodoUI: 待办数量:', window.todoManager.todos.length)
+  /**
+   * 初始化UI
+   */
+  init() {
+    console.log('NotesTodoUI: 初始化...')
+
+    // 等待DOM加载完成
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.setupEventListeners())
+    } else {
+      this.setupEventListeners()
+    }
+  }
+
+  /**
+   * 设置事件监听器
+   */
+  setupEventListeners() {
+    console.log('NotesTodoUI: 设置事件监听器...')
+
+    // 监听Tab切换事件
+    document.addEventListener('click', (e) => {
+      const tab = e.target.closest('.n-tabs-tab')
+      if (tab) {
+        console.log('NotesTodoUI: Tab被点击', tab)
+        this.handleTabClick(tab)
+      }
+    })
+
+    console.log('NotesTodoUI: 事件监听器设置完成')
+  }
+
+  /**
+   * 处理Tab点击事件
+   * @param {Element} tab - 被点击的Tab元素
+   */
+  handleTabClick(tab) {
+    // 获取Tab名称
+    const tabName = tab.getAttribute('name') || tab.textContent.trim()
+    console.log('NotesTodoUI: Tab名称', tabName)
+
+    // 延迟注入，等待Tab面板渲染
+    setTimeout(() => {
+      if (tabName === 'note' || tabName === '便签') {
+        this.injectNotesUI()
+      }
+      if (tabName === 'more' || tabName === '待办') {
+        this.injectTodoUI()
+      }
+    }, 50)
+  }
+
+  /**
+   * 查找Tab面板
+   * @param {string} tabName - Tab名称
+   * @returns {Element} Tab面板元素
+   */
+  findTabPane(tabName) {
+    // 方法1：遍历所有元素，通过文本内容查找
+    const allElements = document.querySelectorAll('*')
+    for (const el of allElements) {
+      const content = el.textContent || el.innerText
+      if (tabName === 'note' && content === '即将完善' && el.children.length === 0) {
+        return el.parentElement
+      }
+      if (tabName === 'more' && content.includes('还能有啥呢') && el.children.length === 0) {
+        return el.parentElement
+      }
+    }
+
+    return null
+  }
+
+  /**
+   * 删除占位符
+   */
+  removePlaceholders() {
+    console.log('NotesTodoUI: 删除占位符...')
+
+    // 查找并删除"即将完善"文本
+    const allElements = document.querySelectorAll('*')
+    allElements.forEach(el => {
+      const content = el.textContent || el.innerText
+      if (content === '即将完善' && el.children.length === 0) {
+        console.log('NotesTodoUI: 删除占位符 - 即将完善')
+        el.remove()
+      }
+      if (content.includes('还能有啥呢') && el.children.length === 0) {
+        console.log('NotesTodoUI: 删除占位符 - 还能有啥呢')
+        el.remove()
+      }
+    })
+  }
+
+  /**
+   * 注入便签UI
+   */
+  injectNotesUI() {
+    if (this.notesInjected) {
+      console.log('NotesTodoUI: 便签UI已注入，跳过')
+      return
+    }
+
+    console.log('NotesTodoUI: 注入便签UI...')
+
+    // 查找便签Tab面板
+    const noteTabPane = this.findTabPane('note')
+    if (!noteTabPane) {
+      console.log('NotesTodoUI: 未找到便签Tab面板')
+      return
+    }
+
+    // 删除占位符
+    this.removePlaceholders()
+
+    // 创建便签容器
+    const container = document.createElement('div')
+    container.className = 'notes-container'
+    container.innerHTML = this.renderNotesUI()
+
+    // 注入到Tab面板
+    noteTabPane.appendChild(container)
+    this.notesInjected = true
+
+    console.log('NotesTodoUI: 便签UI注入完成')
+  }
+
+  /**
+   * 注入待办UI
+   */
+  injectTodoUI() {
+    if (this.todoInjected) {
+      console.log('NotesTodoUI: 待办UI已注入，跳过')
+      return
+    }
+
+    console.log('NotesTodoUI: 注入待办UI...')
+
+    // 查找待办Tab面板
+    const todoTabPane = this.findTabPane('more')
+    if (!todoTabPane) {
+      console.log('NotesTodoUI: 未找到待办Tab面板')
+      return
+    }
+
+    // 删除占位符
+    this.removePlaceholders()
+
+    // 创建待办容器
+    const container = document.createElement('div')
+    container.className = 'todo-container'
+    container.innerHTML = this.renderTodoUI()
+
+    // 注入到Tab面板
+    todoTabPane.appendChild(container)
+    this.todoInjected = true
+
+    console.log('NotesTodoUI: 待办UI注入完成')
+  }
+
+  /**
+   * 渲染便签UI
+   * @returns {string} HTML字符串
+   */
+  renderNotesUI() {
+    return `
+      <div class="notes-header">
+        <div class="notes-title">
+          <span class="icon">📝</span>
+          <span>便签</span>
+        </div>
+        <button class="add-note-btn" onclick="notesTodoUI.showAddNoteModal()">
+          <span class="icon">+</span>
+          <span>添加</span>
+        </button>
+      </div>
+      <div class="notes-list" id="notesList">
+        ${this.renderNotesList()}
+      </div>
+    `
+  }
+
+  /**
+   * 渲染待办UI
+   * @returns {string} HTML字符串
+   */
+  renderTodoUI() {
+    return `
+      <div class="todo-header">
+        <div class="todo-title">
+          <span class="icon">✅</span>
+          <span>待办</span>
+        </div>
+        <div class="todo-actions">
+          <select class="category-filter" onchange="notesTodoUI.filterTodos(this.value)">
+            <option value="all">全部</option>
+            ${this.todoManager.categories.map(cat =>
+              `<option value="${cat}">${cat}</option>`
+            ).join('')}
+          </select>
+          <button class="add-todo-btn" onclick="notesTodoUI.showAddTodoModal()">
+            <span class="icon">+</span>
+            <span>添加</span>
+          </button>
+        </div>
+      </div>
+      <div class="todo-list" id="todoList">
+        ${this.renderTodosList()}
+      </div>
+    `
+  }
+
+  /**
+   * 渲染便签列表
+   * @returns {string} HTML字符串
+   */
+  renderNotesList() {
+    if (this.notesManager.notes.length === 0) {
+      return `
+        <div class="empty-state">
+          <div class="empty-icon">📝</div>
+          <div class="empty-text">还没有便签</div>
+          <div class="empty-hint">点击"添加"按钮创建第一个便签</div>
+        </div>
+      `
+    }
+
+    return this.notesManager.notes.map(note => `
+      <div class="note-item" data-id="${note.id}">
+        <div class="note-content">${this.notesManager.renderMarkdown(note.content)}</div>
+        <div class="note-footer">
+          <div class="note-time">${this.notesManager.formatDate(note.updatedAt)}</div>
+          <div class="note-actions">
+            <button class="edit-btn" onclick="notesTodoUI.editNote(${note.id})">编辑</button>
+            <button class="delete-btn" onclick="notesTodoUI.deleteNote(${note.id})">删除</button>
+          </div>
+        </div>
+      </div>
+    `).join('')
+  }
+
+  /**
+   * 渲染待办列表
+   * @returns {string} HTML字符串
+   */
+  renderTodosList() {
+    const todos = this.todoManager.currentFilter === 'all'
+      ? this.todoManager.todos
+      : this.todoManager.getTodosByCategory(this.todoManager.currentFilter)
+
+    if (todos.length === 0) {
+      return `
+        <div class="empty-state">
+          <div class="empty-icon">✅</div>
+          <div class="empty-text">还没有待办事项</div>
+          <div class="empty-hint">点击"添加"按钮创建第一个待办</div>
+        </div>
+      `
+    }
+
+    // 按分类分组
+    const groupedTodos = {}
+    todos.forEach(todo => {
+      if (!groupedTodos[todo.category]) {
+        groupedTodos[todo.category] = []
+      }
+      groupedTodos[todo.category].push(todo)
+    })
+
+    return Object.entries(groupedTodos).map(([category, categoryTodos]) => `
+      <div class="todo-category">
+        <div class="category-header">
+          <span class="category-icon">📁</span>
+          <span class="category-name">${category}</span>
+          <span class="category-count">${categoryTodos.length}</span>
+        </div>
+        <div class="category-todos">
+          ${categoryTodos.map(todo => `
+            <div class="todo-item ${todo.completed ? 'completed' : ''} ${this.todoManager.isOverdue(todo.dueDate) ? 'overdue' : ''}" data-id="${todo.id}">
+              <div class="todo-checkbox" onclick="notesTodoUI.toggleTodo(${todo.id})">
+                <input type="checkbox" ${todo.completed ? 'checked' : ''}>
+                <span class="checkmark"></span>
+              </div>
+              <div class="todo-info">
+                <div class="todo-title">${todo.title}</div>
+                ${todo.dueDate ? `
+                  <div class="todo-due-date">
+                    <span class="date-icon">📅</span>
+                    <span>${this.todoManager.formatDate(todo.dueDate)}</span>
+                  </div>
+                ` : ''}
+              </div>
+              <div class="todo-actions">
+                <button class="edit-btn" onclick="notesTodoUI.editTodo(${todo.id})">编辑</button>
+                <button class="delete-btn" onclick="notesTodoUI.deleteTodo(${todo.id})">删除</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('')
+  }
+
+  /**
+   * 显示添加便签模态框
+   */
+  showAddNoteModal() {
+    this.showModal('添加便签', `
+      <div class="modal-form">
+        <textarea id="noteContent" placeholder="输入便签内容，支持Markdown格式..." rows="6"></textarea>
+        <div class="modal-hint">支持 **粗体**、*斜体*、\`代码\`、[链接](url) 等Markdown语法</div>
+      </div>
+    `, () => {
+      const content = document.getElementById('noteContent').value
+      if (content) {
+        this.notesManager.addNote(content)
+        this.refreshNotesList()
+        this.closeModal()
+      }
+    })
+  }
+
+  /**
+   * 编辑便签
+   * @param {number} id - 便签ID
+   */
+  editNote(id) {
+    const note = this.notesManager.getNote(id)
+    if (!note) return
+
+    this.showModal('编辑便签', `
+      <div class="modal-form">
+        <textarea id="noteContent" placeholder="输入便签内容..." rows="6">${note.content}</textarea>
+      </div>
+    `, () => {
+      const content = document.getElementById('noteContent').value
+      if (content) {
+        this.notesManager.updateNote(id, content)
+        this.refreshNotesList()
+        this.closeModal()
+      }
+    })
+  }
+
+  /**
+   * 删除便签
+   * @param {number} id - 便签ID
+   */
+  deleteNote(id) {
+    if (confirm('确定要删除这个便签吗？')) {
+      this.notesManager.deleteNote(id)
+      this.refreshNotesList()
+    }
+  }
+
+  /**
+   * 显示添加待办模态框
+   */
+  showAddTodoModal() {
+    this.showModal('添加待办', `
+      <div class="modal-form">
+        <input type="text" id="todoTitle" placeholder="待办标题" required>
+        <select id="todoCategory">
+          ${this.todoManager.categories.map(cat =>
+            `<option value="${cat}">${cat}</option>`
+          ).join('')}
+        </select>
+        <input type="date" id="todoDueDate" placeholder="截止日期（可选）">
+      </div>
+    `, () => {
+      const title = document.getElementById('todoTitle').value
+      const category = document.getElementById('todoCategory').value
+      const dueDate = document.getElementById('todoDueDate').value
+
+      if (title) {
+        this.todoManager.addTodo({ title, category, dueDate })
+        this.refreshTodosList()
+        this.closeModal()
+      }
+    })
+  }
+
+  /**
+   * 编辑待办
+   * @param {number} id - 待办ID
+   */
+  editTodo(id) {
+    const todo = this.todoManager.getTodo(id)
+    if (!todo) return
+
+    this.showModal('编辑待办', `
+      <div class="modal-form">
+        <input type="text" id="todoTitle" placeholder="待办标题" value="${todo.title}" required>
+        <select id="todoCategory">
+          ${this.todoManager.categories.map(cat =>
+            `<option value="${cat}" ${cat === todo.category ? 'selected' : ''}>${cat}</option>`
+          ).join('')}
+        </select>
+        <input type="date" id="todoDueDate" value="${todo.dueDate || ''}" placeholder="截止日期（可选）">
+      </div>
+    `, () => {
+      const title = document.getElementById('todoTitle').value
+      const category = document.getElementById('todoCategory').value
+      const dueDate = document.getElementById('todoDueDate').value
+
+      if (title) {
+        this.todoManager.updateTodo(id, { title, category, dueDate })
+        this.refreshTodosList()
+        this.closeModal()
+      }
+    })
+  }
+
+  /**
+   * 删除待办
+   * @param {number} id - 待办ID
+   */
+  deleteTodo(id) {
+    if (confirm('确定要删除这个待办吗？')) {
+      this.todoManager.deleteTodo(id)
+      this.refreshTodosList()
+    }
+  }
+
+  /**
+   * 切换待办完成状态
+   * @param {number} id - 待办ID
+   */
+  toggleTodo(id) {
+    this.todoManager.toggleTodo(id)
+    this.refreshTodosList()
+  }
+
+  /**
+   * 过滤待办
+   * @param {string} category - 分类名称
+   */
+  filterTodos(category) {
+    this.todoManager.currentFilter = category
+    this.refreshTodosList()
+  }
+
+  /**
+   * 刷新便签列表
+   */
+  refreshNotesList() {
+    const notesList = document.getElementById('notesList')
+    if (notesList) {
+      notesList.innerHTML = this.renderNotesList()
+    }
+  }
+
+  /**
+   * 刷新待办列表
+   */
+  refreshTodosList() {
+    const todoList = document.getElementById('todoList')
+    if (todoList) {
+      todoList.innerHTML = this.renderTodosList()
+    }
+  }
+
+  /**
+   * 显示模态框
+   * @param {string} title - 模态框标题
+   * @param {string} content - 模态框内容
+   * @param {Function} onConfirm - 确认回调
+   */
+  showModal(title, content, onConfirm) {
+    // 移除已存在的模态框
+    const existingModal = document.querySelector('.custom-modal')
+    if (existingModal) {
+      existingModal.remove()
+    }
+
+    // 创建模态框
+    const modal = document.createElement('div')
+    modal.className = 'custom-modal'
+    modal.innerHTML = `
+      <div class="modal-overlay"></div>
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3>${title}</h3>
+          <button class="modal-close" onclick="notesTodoUI.closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          ${content}
+        </div>
+        <div class="modal-footer">
+          <button class="modal-cancel" onclick="notesTodoUI.closeModal()">取消</button>
+          <button class="modal-confirm" id="modalConfirm">确定</button>
+        </div>
+      </div>
+    `
+
+    document.body.appendChild(modal)
+
+    // 绑定确认按钮事件
+    document.getElementById('modalConfirm').addEventListener('click', onConfirm)
+
+    // 显示模态框
+    setTimeout(() => {
+      modal.classList.add('show')
+    }, 10)
+  }
+
+  /**
+   * 关闭模态框
+   */
+  closeModal() {
+    const modal = document.querySelector('.custom-modal')
+    if (modal) {
+      modal.classList.remove('show')
+      setTimeout(() => {
+        modal.remove()
+      }, 300)
+    }
+  }
+}
+
+// ==================== 初始化 ====================
+let notesTodoUI
+
+// 等待页面加载完成后初始化
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    notesTodoUI = new NotesTodoUI()
+  })
+} else {
+  notesTodoUI = new NotesTodoUI()
+}
+
+// 暴露到全局作用域，供HTML中的onclick使用
+window.notesTodoUI = notesTodoUI
