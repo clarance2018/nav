@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>便签和待办功能测试</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'HarmonyOS_Regular', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .test-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .test-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .test-header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .test-header p {
+      opacity: 0.9;
+      font-size: 16px;
+    }
+
+    .test-content {
+      display: flex;
+      min-height: 600px;
+    }
+
+    .test-panel {
+      flex: 1;
+      padding: 20px;
+      border-right: 1px solid #eee;
+    }
+
+    .test-panel:last-child {
+      border-right: none;
+    }
+
+    .test-panel h2 {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+    }
+
+    .test-section {
+      margin-bottom: 30px;
+    }
+
+    .test-section h3 {
+      font-size: 16px;
+      color: #555;
+      margin-bottom: 15px;
+    }
+
+    .test-item {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .test-item.success {
+      border-left-color: #28a745;
+      background: #f0fff4;
+    }
+
+    .test-item.error {
+      border-left-color: #dc3545;
+      background: #fff5f5;
+    }
+
+    .test-item.warning {
+      border-left-color: #ffc107;
+      background: #fff9e6;
+    }
+
+    .test-item h4 {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .test-item p {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .test-item code {
+      background: rgba(0, 0, 0, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+
+    .test-btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+
+    .test-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .test-btn:active {
+      transform: translateY(0);
+    }
+
+    .test-btn.secondary {
+      background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+
+    .test-btn.success {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+
+    .test-result {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #dee2e6;
+    }
+
+    .test-result h3 {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .test-result pre {
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .test-result pre code {
+      background: none;
+      padding: 0;
+      border-radius: 0;
+      font-size: inherit;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .status-indicator.success {
+      background: #28a745;
+    }
+
+    .status-indicator.error {
+      background: #dc3545;
+    }
+
+    .status-indicator.pending {
+      background: #ffc107;
+    }
+
+    .test-footer {
+      background: #f8f9fa;
+      padding: 20px;
+      text-align: center;
+      border-top: 1px solid #eee;
+    }
+
+    .test-footer p {
+      font-size: 14px;
+      color: #666;
+    }
+
+    @media (max-width: 768px) {
+      .test-content {
+        flex-direction: column;
+      }
+
+      .test-panel {
+        border-right: none;
+        border-bottom: 1px solid #eee;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <div class="test-header">
+      <h1>🎯 便签和待办功能测试</h1>
+      <p>Navigation 导航网站功能测试页面</p>
+    </div>
+
+    <div class="test-content">
+      <!-- 左侧：功能测试 -->
+      <div class="test-panel">
+        <h2>功能测试</h2>
+
+        <div class="test-section">
+          <h3>📝 便签功能</h3>
+
+          <div class="test-item">
+            <h4>测试 1：添加便签</h4>
+            <p>点击按钮测试添加便签功能</p>
+            <button class="test-btn" onclick="testAddNote()">测试添加便签</button>
+          </div>
+
+          <div class="test-item">
+            <h4>测试 2：编辑便签</h4>
+            <p>点击按钮测试编辑便签功能</p>
+            <button class="test-btn" onclick="testEditNote()">测试编辑便签</button>
+          </div>
+
+          <div class="test-item">
+            <h4>测试 3：删除便签</h4>
+            <p>点击按钮测试删除便签功能</p>
+            <button class="test-btn secondary" onclick="testDeleteNote()">测试删除便签</button>
+          </div>
+
+          <div class="test-item">
+            <h4>测试 4：Markdown渲染</h4>
+            <p>点击按钮测试Markdown格式渲染</p>
+            <button class="test-btn success" onclick="testMarkdown()">测试Markdown</button>
+          </div>
+        </div>
+
+        <div class="test-section">
+          <h3>✅ 待办功能</h3>
+
+          <div class="test-item">
+            <h4>测试 5：添加待办</h4>
+            <p>点击按钮测试添加待办功能</p>
+            <button class="test-btn" onclick="testAddTodo()">测试添加待办</button>
+          </div>
+
+          <div class="test-item">
+            <h4>测试 6：标记完成</h4>
+            <p>点击按钮测试标记完成功能</p>
+            <button class="test-btn" onclick="testToggleTodo()">测试标记完成</button>
+          </div>
+
+          <div class="test-item">
+            <h4>测试 7：分类功能</h4>
+            <p>点击按钮测试分类功能</p>
+            <button class="test-btn secondary" onclick="testCategories()">测试分类功能</button>
+          </div>
+
+          <div class="test-item">
+            <h4>测试 8：截止日期</h4>
+            <p>点击按钮测试截止日期功能</p>
+            <button class="test-btn success" onclick="testDueDate()">测试截止日期</button>
+          </div>
+        </div>
+
+        <div class="test-section">
+          <h3>💾 数据持久化</h3>
+
+          <div class="test-item">
+            <h4>测试 9：localStorage存储</h4>
+            <p>点击按钮测试数据持久化</p>
+            <button class="test-btn" onclick="testLocalStorage()">测试数据持久化</button>
+          </div>
+
+          <div class="test-item">
+            <h4>测试 10：数据导出</h4>
+            <p>点击按钮测试数据导出功能</p>
+            <button class="test-btn secondary" onclick="testExport()">测试数据导出</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧：测试结果 -->
+      <div class="test-panel">
+        <h2>测试结果</h2>
+
+        <div class="test-result">
+          <h3>测试日志</h3>
+          <pre id="testLog"><code>等待测试开始...</code></pre>
+        </div>
+
+        <div class="test-result">
+          <h3>当前数据</h3>
+          <pre id="currentData"><code>加载中...</code></pre>
+        </div>
+
+        <div class="test-result">
+          <h3>测试统计</h3>
+          <div id="testStats">
+            <p><span class="status-indicator pending"></span>等待测试...</p>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <button class="test-btn" onclick="runAllTests()">运行所有测试</button>
+          <button class="test-btn secondary" onclick="clearTestData()">清除测试数据</button>
+          <button class="test-btn success" onclick="refreshData()">刷新数据</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-footer">
+      <p>Navigation 便签和待办功能测试 | 雷布斯工程师出品 🎤</p>
+    </div>
+  </div>
+
+  <script src="/js/notes-todo.js"></script>
+  <script>
+    // 测试日志元素
+    const testLog = document.getElementById('testLog')
+    const currentData = document.getElementById('currentData')
+    const testStats = document.getElementById('testStats')
+
+    // 测试计数器
+    let testCount = 0
+    let successCount = 0
+    let errorCount = 0
+
+    // 日志函数
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString()
+      const prefix = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'
+      const logEntry = `[${timestamp}] ${prefix} ${message}\n`
+      testLog.querySelector('code').textContent += logEntry
+      testLog.scrollTop = testLog.scrollHeight
+    }
+
+    // 更新统计数据
+    function updateStats() {
+      testStats.innerHTML = `
+        <p><span class="status-indicator success"></span>成功: ${successCount}</p>
+        <p><span class="status-indicator error"></span>失败: ${errorCount}</p>
+        <p><span class="status-indicator pending"></span>总计: ${testCount}</p>
+      `
+    }
+
+    // 刷新数据显示
+    function refreshData() {
+      try {
+        const notes = JSON.parse(localStorage.getItem('navigation_notes') || '[]')
+        const todos = JSON.parse(localStorage.getItem('navigation_todos') || '[]')
+
+        currentData.querySelector('code').textContent = JSON.stringify({
+          notes: notes,
+          todos: todos
+        }, null, 2)
+
+        log('数据刷新成功', 'success')
+      } catch (e) {
+        log('数据刷新失败: ' + e.message, 'error')
+      }
+    }
+
+    // 测试添加便签
+    function testAddNote() {
+      testCount++
+      try {
+        const note = notesTodoUI.notesManager.addNote('测试便签内容 - ' + new Date().toLocaleTimeString())
+        log('添加便签成功，ID: ' + note.id, 'success')
+        successCount++
+        refreshData()
+      } catch (e) {
+        log('添加便签失败: ' + e.message, 'error')
+        errorCount++
+      }
+      updateStats()
+    }
+
+    // 测试编辑便签
+    function testEditNote() {
+      testCount++
+      try {
+        const notes = notesTodoUI.notesManager.notes
+        if (notes.length > 0) {
+          const note = notes[0]
+          notesTodoUI.notesManager.updateNote(note.id, '更新后的便签内容 - ' + new Date().toLocaleTimeString())
+          log('编辑便签成功，ID: ' + note.id, 'success')
+          successCount++
+          refreshData()
+        } else {
+          log('没有便签可编辑', 'error')
+          errorCount++
+        }
+      } catch (e) {
+        log('编辑便签失败: ' + e.message, 'error')
+        errorCount++
+      }
+      updateStats()
+    }
+
+    // 测试删除便签
+    function testDeleteNote() {
+      testCount++
+      try {
+        const notes = notesTodoUI.notesManager.notes
+        if (notes.length > 0) {
+          const note = notes[0]
+          notesTodoUI.notesManager.deleteNote(note.id)
+          log('删除便签成功，ID: ' + note.id, 'success')
+          successCount++
+          refreshData()
+        } else {
+          log('没有便签可删除', 'error')
+          errorCount++
+        }
+      } catch (e) {
+        log('删除便签失败: ' + e.message, 'error')
+        errorCount++
+      }
+      updateStats()
+    }
+
+    // 测试Markdown渲染
+    function testMarkdown() {
+      testCount++
+      try {
+        const markdownText = `
+# 标题测试
+## 二级标题
+### 三级标题
+
+**粗体文本**
+*斜体文本*
+~~删除线~~
+
+\`行内代码\`
+
+> 引用文本
+
+- 列表项1
+- 列表项2
+- 列表项3
+
+[链接文本](https://example.com)
+
+---
+
+这是一段测试文本。
+        `
+
+        const html = notesTodoUI.notesManager.renderMarkdown(markdownText)
+        log('Markdown渲染成功，HTML长度: ' + html.length, 'success')
+        successCount++
+
+        // 显示渲染结果
+        const note = notesTodoUI.notesManager.addNote(markdownText)
+        log('已创建Markdown测试便签，ID: ' + note.id, 'success')
+        refreshData()
+      } catch (e) {
+        log('Markdown渲染失败: ' + e.message, 'error')
+        errorCount++
+      }
+      updateStats()
+    }
+
+    // 测试添加待办
+    function testAddTodo() {
+      testCount++
+      try {
+        const todo = notesTodoUI.todoManager.addTodo({
+          title: '测试待办事项 - ' + new Date().toLocaleTimeString(),
+          category: '工作',
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        })
+        log('添加待办成功，ID: ' + todo.id, 'success')
+        successCount++
+        refreshData()
+      } catch (e) {
+        log('添加待办失败: ' + e.message, 'error')
+        errorCount++
+      }
+      updateStats()
+    }
+
+    // 测试标记完成
+    function testToggleTodo() {
+      testCount++
+      try {
+        const todos = notesTodoUI.todoManager.todos
+        if (todos.length > 0) {
+          const todo = todos[0]
+          notesTodoUI.todoManager.toggleTodo(todo.id)
+          log('标记待办完成成功，ID: ' + todo.id + '，状态: ' + (!todo.completed ? '已完成' : '未完成'), 'success')
+          successCount++
+          refreshData()
+        } else {
+          log('没有待办可标记', 'error')
+          errorCount++
+        }
+      } catch (e) {
+        log('标记待办完成失败: ' + e.message, 'error')
+        errorCount++
+      }
+      updateStats()
+    }
+
+    // 测试分类功能
+    function testCategories() {
+      testCount++
+      try {
+        const categories = ['工作', '学习', '生活', '其他']
+        categories.forEach((category, index) => {
+          notesTodoUI.todoManager.addTodo({
+            title: `${category}测试待办`,
+            category: category,
+            dueDate: new Date(Date.now() + (index + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          })
+        })
+        log('分类测试成功，创建了4个不同分类的待办', 'success')
+        successCount++
+        refreshData()
+      } catch (e) {
+        log('分类测试失败: ' + e.message, 'error')
+        errorCount++
+      }
+      updateStats()
+    }
+
+    // 测试截止日期
+    function testDueDate() {
+      testCount++
+      try {
+        const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        const todo = notesTodoUI.todoManager.addTodo({
+          title: '明天到期的待办',
+          category: '工作',
+          dueDate: tomorrow
+        })
+        log('截止日期测试成功，到期日: ' + tomorrow, 'success')
+        successCount++
+        refreshData()
+      } catch (e) {
+        log('截止日期测试失败: ' + e.message, 'error')
+        errorCount++
+      }
+      updateStats()
+    }
+
+    // 测试localStorage存储
+    function testLocalStorage() {
+      testCount++
+      try {
+        const notes = notesTodoUI.notesManager.notes
+        const todos = notesTodoUI.todoManager.todos
+        log('localStorage测试成功', 'success')
+        log('便签数量: ' + notes.length, 'info')
+        log('待办数量: ' + todos.length, 'info')
+        successCount++
+        refreshData()
+      } catch (e) {
+        log('localStorage测试失败: ' + e.message, 'error')
+        errorCount++
+      }
+      updateStats()
+    }
+
+    // 测试数据导出
+    function testExport() {
+      testCount++
+      try {
+        const data = {
+          notes: notesTodoUI.notesManager.notes,
+          todos: notesTodoUI.todoManager.todos,
+          exportTime: new Date().toISOString()
+        }
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'navigation-data-backup.json'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+
+        log('数据导出成功', 'success')
+        successCount++
+      } catch (e) {
+        log('数据导出失败: ' + e.message, 'error')
+        errorCount++
+      }
+      updateStats()
+    }
+
+    // 运行所有测试
+    function runAllTests() {
+      log('开始运行所有测试...', 'info')
+      testAddNote()
+      setTimeout(() => testEditNote(), 500)
+      setTimeout(() => testDeleteNote(), 1000)
+      setTimeout(() => testMarkdown(), 1500)
+      setTimeout(() => testAddTodo(), 2000)
+      setTimeout(() => testToggleTodo(), 2500)
+      setTimeout(() => testCategories(), 3000)
+      setTimeout(() => testDueDate(), 3500)
+      setTimeout(() => testLocalStorage(), 4000)
+      setTimeout(() => testExport(), 4500)
+      setTimeout(() => {
+        log('所有测试完成！', 'success')
+        log(`成功: ${successCount}, 失败: ${errorCount}, 总计: ${testCount}`, 'info')
+      }, 5000)
+    }
+
+    // 清除测试数据
+    function clearTestData() {
+      if (confirm('确定要清除所有测试数据吗？')) {
+        localStorage.removeItem('navigation_notes')
+        localStorage.removeItem('navigation_todos')
+        notesTodoUI.notesManager.notes = []
+        notesTodoUI.todoManager.todos = []
+        log('测试数据已清除', 'success')
+        refreshData()
+        testCount = 0
+        successCount = 0
+        errorCount = 0
+        updateStats()
+      }
+    }
+
+    // 页面加载完成后初始化
+    window.addEventListener('load', () => {
+      log('测试页面加载完成', 'success')
+      log('便签和待办功能模块已加载', 'info')
+      refreshData()
+      updateStats()
+    })
+  </script>
+</body>
+</html>
