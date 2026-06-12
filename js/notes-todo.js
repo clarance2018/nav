@@ -348,6 +348,8 @@ class NotesTodoUI {
    * 初始化UI
    */
   init() {
+    console.log('NotesTodoUI: 初始化...')
+
     // 等待DOM加载完成
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.setupUI())
@@ -360,22 +362,73 @@ class NotesTodoUI {
    * 设置UI
    */
   setupUI() {
+    console.log('NotesTodoUI: 设置UI...')
+
     // 监听DOM变化，找到便签和待办的Tab面板
     this.observeDOM()
+
     // 尝试立即注入
     this.injectUI()
+
+    // 添加延迟重试机制
+    setTimeout(() => {
+      console.log('NotesTodoUI: 延迟重试注入...')
+      this.injectUI()
+    }, 1000)
+
+    setTimeout(() => {
+      console.log('NotesTodoUI: 二次延迟重试注入...')
+      this.injectUI()
+    }, 3000)
+
+    // 添加点击Tab时的注入
+    this.setupTabClickListeners()
+  }
+
+  /**
+   * 设置Tab点击监听器
+   */
+  setupTabClickListeners() {
+    // 监听Tab点击事件
+    document.addEventListener('click', (e) => {
+      const tab = e.target.closest('.n-tabs-tab')
+      if (tab) {
+        console.log('NotesTodoUI: Tab被点击', tab)
+        // 延迟注入，等待Tab面板渲染
+        setTimeout(() => {
+          this.injectUI()
+        }, 100)
+      }
+    })
   }
 
   /**
    * 监听DOM变化
    */
   observeDOM() {
+    let injectTimeout = null
+
     const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'childList') {
-          this.injectUI()
+      // 防抖处理，避免频繁调用
+      if (injectTimeout) {
+        clearTimeout(injectTimeout)
+      }
+
+      injectTimeout = setTimeout(() => {
+        // 检查是否需要注入
+        const noteTabPane = this.findTabPane('note')
+        const todoTabPane = this.findTabPane('more')
+
+        if (noteTabPane && !noteTabPane.querySelector('.notes-container')) {
+          console.log('NotesTodoUI: DOM变化，尝试注入便签UI')
+          this.injectNotesUI(noteTabPane)
         }
-      })
+
+        if (todoTabPane && !todoTabPane.querySelector('.todo-container')) {
+          console.log('NotesTodoUI: DOM变化，尝试注入待办UI')
+          this.injectTodoUI(todoTabPane)
+        }
+      }, 500)
     })
 
     observer.observe(document.body, {
@@ -388,16 +441,31 @@ class NotesTodoUI {
    * 注入UI到页面
    */
   injectUI() {
+    // 添加调试信息
+    console.log('NotesTodoUI: 尝试注入UI...')
+
     // 查找便签Tab面板
     const noteTabPane = this.findTabPane('note')
-    if (noteTabPane && !noteTabPane.querySelector('.notes-container')) {
-      this.injectNotesUI(noteTabPane)
+    if (noteTabPane) {
+      console.log('NotesTodoUI: 找到便签Tab面板', noteTabPane)
+      if (!noteTabPane.querySelector('.notes-container')) {
+        this.injectNotesUI(noteTabPane)
+        console.log('NotesTodoUI: 便签UI注入成功')
+      }
+    } else {
+      console.log('NotesTodoUI: 未找到便签Tab面板')
     }
 
     // 查找待办Tab面板
     const todoTabPane = this.findTabPane('more')
-    if (todoTabPane && !todoTabPane.querySelector('.todo-container')) {
-      this.injectTodoUI(todoTabPane)
+    if (todoTabPane) {
+      console.log('NotesTodoUI: 找到待办Tab面板', todoTabPane)
+      if (!todoTabPane.querySelector('.todo-container')) {
+        this.injectTodoUI(todoTabPane)
+        console.log('NotesTodoUI: 待办UI注入成功')
+      }
+    } else {
+      console.log('NotesTodoUI: 未找到待办Tab面板')
     }
   }
 
@@ -407,14 +475,40 @@ class NotesTodoUI {
    * @returns {Element} Tab面板元素
    */
   findTabPane(tabName) {
-    // 查找包含特定文本的Tab面板
+    // 方法1：通过name属性查找
+    let pane = document.querySelector(`.n-tab-pane[name="${tabName}"]`)
+    if (pane) return pane
+
+    // 方法2：通过data属性查找
+    pane = document.querySelector(`.n-tab-pane[data-name="${tabName}"]`)
+    if (pane) return pane
+
+    // 方法3：遍历所有Tab面板，通过文本内容查找
     const tabPanes = document.querySelectorAll('.n-tab-pane')
     for (const pane of tabPanes) {
-      const tab = pane.getAttribute('name')
-      if (tab === tabName) {
+      // 检查Tab面板的标题
+      const tabHeader = pane.closest('.n-tabs')?.querySelector(`.n-tabs-tab[name="${tabName}"]`)
+      if (tabHeader) return pane
+
+      // 检查面板内容
+      const content = pane.textContent || pane.innerText
+      if (tabName === 'note' && content.includes('即将完善')) {
+        return pane
+      }
+      if (tabName === 'more' && content.includes('还能有啥呢')) {
         return pane
       }
     }
+
+    // 方法4：通过索引查找（便签是第二个Tab，待办是第三个Tab）
+    const allPanes = document.querySelectorAll('.n-tab-pane')
+    if (tabName === 'note' && allPanes.length >= 2) {
+      return allPanes[1]
+    }
+    if (tabName === 'more' && allPanes.length >= 3) {
+      return allPanes[2]
+    }
+
     return null
   }
 
