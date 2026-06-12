@@ -5,6 +5,23 @@
  * 版本：1.0.0
  */
 
+/* ==================== 隐藏原始占位符 ==================== */
+/* 隐藏便签Tab中的"即将完善"文本 */
+.n-tab-pane[name="note"] > *:not(.notes-container) {
+  display: none !important;
+}
+
+/* 隐藏待办Tab中的"还能有啥呢"文本 */
+.n-tab-pane[name="more"] > *:not(.todo-container) {
+  display: none !important;
+}
+
+/* 通用占位符隐藏规则 */
+.n-tab-pane[name="note"] .notes-container:empty,
+.n-tab-pane[name="more"] .todo-container:empty {
+  display: none !important;
+}
+
 /* ==================== 通用样式 ==================== */
 .notes-container,
 .todo-container {

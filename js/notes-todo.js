@@ -370,19 +370,59 @@ class NotesTodoUI {
     // 尝试立即注入
     this.injectUI()
 
-    // 添加延迟重试机制
-    setTimeout(() => {
-      console.log('NotesTodoUI: 延迟重试注入...')
-      this.injectUI()
-    }, 1000)
-
-    setTimeout(() => {
-      console.log('NotesTodoUI: 二次延迟重试注入...')
-      this.injectUI()
-    }, 3000)
+    // 添加更频繁的延迟重试机制
+    const retryIntervals = [100, 300, 500, 1000, 1500, 2000, 3000, 5000]
+    retryIntervals.forEach((delay, index) => {
+      setTimeout(() => {
+        console.log(`NotesTodoUI: 延迟重试注入 (${index + 1}/${retryIntervals.length})...`)
+        this.injectUI()
+      }, delay)
+    })
 
     // 添加点击Tab时的注入
     this.setupTabClickListeners()
+
+    // 添加轮询检测机制
+    this.startPolling()
+  }
+
+  /**
+   * 启动轮询检测
+   */
+  startPolling() {
+    let pollCount = 0
+    const maxPolls = 20 // 最多轮询20次
+    const pollInterval = 500 // 每500毫秒检测一次
+
+    const poll = () => {
+      pollCount++
+      console.log(`NotesTodoUI: 轮询检测 (${pollCount}/${maxPolls})...`)
+
+      const noteTabPane = this.findTabPane('note')
+      const todoTabPane = this.findTabPane('more')
+
+      if (noteTabPane && !noteTabPane.querySelector('.notes-container')) {
+        console.log('NotesTodoUI: 轮询发现便签Tab面板，注入UI')
+        this.injectNotesUI(noteTabPane)
+      }
+
+      if (todoTabPane && !todoTabPane.querySelector('.todo-container')) {
+        console.log('NotesTodoUI: 轮询发现待办Tab面板，注入UI')
+        this.injectTodoUI(todoTabPane)
+      }
+
+      // 如果找到了Tab面板或达到最大轮询次数，停止轮询
+      if ((noteTabPane && todoTabPane) || pollCount >= maxPolls) {
+        console.log('NotesTodoUI: 轮询结束')
+        return
+      }
+
+      // 继续轮询
+      setTimeout(poll, pollInterval)
+    }
+
+    // 开始轮询
+    setTimeout(poll, pollInterval)
   }
 
   /**
@@ -428,7 +468,7 @@ class NotesTodoUI {
           console.log('NotesTodoUI: DOM变化，尝试注入待办UI')
           this.injectTodoUI(todoTabPane)
         }
-      }, 500)
+      }, 100) // 减少防抖延迟到100毫秒
     })
 
     observer.observe(document.body, {
