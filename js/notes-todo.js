@@ -361,41 +361,79 @@ class NotesTodoUI {
   }
 
   /**
-   * 设置事件监听器
+   * 设置事件监听器（使用MutationObserver监听Tab面板变化）
    */
   setupEventListeners() {
     console.log('NotesTodoUI: 设置事件监听器...')
 
-    // 监听Tab切换事件
-    document.addEventListener('click', (e) => {
-      const tab = e.target.closest('.n-tabs-tab')
-      if (tab) {
-        console.log('NotesTodoUI: Tab被点击', tab)
-        this.handleTabClick(tab)
-      }
-    })
+    // 使用MutationObserver监听Tab面板内容变化
+    // 因为Vue/Naive UI的Tab点击事件不会冒泡到document
+    this.observeTabChanges()
 
     console.log('NotesTodoUI: 事件监听器设置完成')
   }
 
   /**
-   * 处理Tab点击事件
-   * @param {Element} tab - 被点击的Tab元素
+   * 监听Tab面板变化
+   * 使用MutationObserver检测Tab切换
    */
-  handleTabClick(tab) {
-    // 获取Tab名称
-    const tabName = tab.getAttribute('name') || tab.textContent.trim()
-    console.log('NotesTodoUI: Tab名称', tabName)
+  observeTabChanges() {
+    // 等待Tab面板渲染完成
+    const waitForPaneWrapper = () => {
+      const paneWrapper = document.querySelector('.n-tabs-pane-wrapper')
+      if (paneWrapper) {
+        console.log('NotesTodoUI: 找到Tab面板，开始监听')
+        this.setupPaneObserver(paneWrapper)
+      } else {
+        // 如果还没渲染，继续等待
+        setTimeout(waitForPaneWrapper, 100)
+      }
+    }
+    waitForPaneWrapper()
+  }
 
-    // 延迟注入，等待Tab面板渲染
-    setTimeout(() => {
-      if (tabName === 'note' || tabName === '便签') {
-        this.injectNotesUI()
-      }
-      if (tabName === 'more' || tabName === '待办') {
-        this.injectTodoUI()
-      }
-    }, 50)
+  /**
+   * 设置面板变化监听器
+   * @param {Element} paneWrapper - Tab面板容器
+   */
+  setupPaneObserver(paneWrapper) {
+    // 检查当前面板内容
+    this.checkAndInject(paneWrapper)
+
+    // 创建MutationObserver监听子元素变化
+    const observer = new MutationObserver((mutations) => {
+      console.log('NotesTodoUI: 检测到Tab面板变化')
+      this.checkAndInject(paneWrapper)
+    })
+
+    // 监听子元素变化
+    observer.observe(paneWrapper, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    })
+
+    console.log('NotesTodoUI: MutationObserver已设置')
+  }
+
+  /**
+   * 检查并注入UI
+   * @param {Element} paneWrapper - Tab面板容器
+   */
+  checkAndInject(paneWrapper) {
+    const paneContent = paneWrapper.textContent || ''
+
+    // 检查是否是便签Tab（显示"即将完善"）
+    if (paneContent.includes('即将完善')) {
+      console.log('NotesTodoUI: 检测到便签Tab，准备注入')
+      setTimeout(() => this.injectNotesUI(), 50)
+    }
+
+    // 检查是否是待办Tab（显示"还能有啥呢"）
+    if (paneContent.includes('还能有啥呢')) {
+      console.log('NotesTodoUI: 检测到待办Tab，准备注入')
+      setTimeout(() => this.injectTodoUI(), 50)
+    }
   }
 
   /**
