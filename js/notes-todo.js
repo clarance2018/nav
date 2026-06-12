@@ -426,56 +426,27 @@ class NotesTodoUI {
     // 检查是否是便签Tab（显示"即将完善"）
     if (paneContent.includes('即将完善')) {
       console.log('NotesTodoUI: 检测到便签Tab，准备注入')
+      // 重置待办注入状态，以便切换回来时可以重新注入
+      this.todoInjected = false
       setTimeout(() => this.injectNotesUI(), 50)
     }
 
     // 检查是否是待办Tab（显示"还能有啥呢"）
     if (paneContent.includes('还能有啥呢')) {
       console.log('NotesTodoUI: 检测到待办Tab，准备注入')
+      // 重置便签注入状态，以便切换回来时可以重新注入
+      this.notesInjected = false
       setTimeout(() => this.injectTodoUI(), 50)
     }
   }
 
   /**
-   * 查找Tab面板
-   * @param {string} tabName - Tab名称
-   * @returns {Element} Tab面板元素
+   * 获取当前活动的Tab面板
+   * @returns {Element|null} 当前活动的Tab面板元素
    */
-  findTabPane(tabName) {
-    // 方法1：遍历所有元素，通过文本内容查找
-    const allElements = document.querySelectorAll('*')
-    for (const el of allElements) {
-      const content = el.textContent || el.innerText
-      if (tabName === 'note' && content === '即将完善' && el.children.length === 0) {
-        return el.parentElement
-      }
-      if (tabName === 'more' && content.includes('还能有啥呢') && el.children.length === 0) {
-        return el.parentElement
-      }
-    }
-
-    return null
-  }
-
-  /**
-   * 删除占位符
-   */
-  removePlaceholders() {
-    console.log('NotesTodoUI: 删除占位符...')
-
-    // 查找并删除"即将完善"文本
-    const allElements = document.querySelectorAll('*')
-    allElements.forEach(el => {
-      const content = el.textContent || el.innerText
-      if (content === '即将完善' && el.children.length === 0) {
-        console.log('NotesTodoUI: 删除占位符 - 即将完善')
-        el.remove()
-      }
-      if (content.includes('还能有啥呢') && el.children.length === 0) {
-        console.log('NotesTodoUI: 删除占位符 - 还能有啥呢')
-        el.remove()
-      }
-    })
+  getActiveTabPane() {
+    // 直接查找 .n-tab-pane 元素（Naive UI 渲染的面板）
+    return document.querySelector('.n-tab-pane')
   }
 
   /**
@@ -489,15 +460,15 @@ class NotesTodoUI {
 
     console.log('NotesTodoUI: 注入便签UI...')
 
-    // 查找便签Tab面板
-    const noteTabPane = this.findTabPane('note')
-    if (!noteTabPane) {
-      console.log('NotesTodoUI: 未找到便签Tab面板')
+    // 获取当前活动的Tab面板
+    const tabPane = this.getActiveTabPane()
+    if (!tabPane) {
+      console.log('NotesTodoUI: 未找到Tab面板')
       return
     }
 
-    // 删除占位符
-    this.removePlaceholders()
+    // 清空面板内容（删除占位符）
+    tabPane.innerHTML = ''
 
     // 创建便签容器
     const container = document.createElement('div')
@@ -505,7 +476,7 @@ class NotesTodoUI {
     container.innerHTML = this.renderNotesUI()
 
     // 注入到Tab面板
-    noteTabPane.appendChild(container)
+    tabPane.appendChild(container)
     this.notesInjected = true
 
     console.log('NotesTodoUI: 便签UI注入完成')
@@ -522,15 +493,15 @@ class NotesTodoUI {
 
     console.log('NotesTodoUI: 注入待办UI...')
 
-    // 查找待办Tab面板
-    const todoTabPane = this.findTabPane('more')
-    if (!todoTabPane) {
-      console.log('NotesTodoUI: 未找到待办Tab面板')
+    // 获取当前活动的Tab面板
+    const tabPane = this.getActiveTabPane()
+    if (!tabPane) {
+      console.log('NotesTodoUI: 未找到Tab面板')
       return
     }
 
-    // 删除占位符
-    this.removePlaceholders()
+    // 清空面板内容（删除占位符）
+    tabPane.innerHTML = ''
 
     // 创建待办容器
     const container = document.createElement('div')
@@ -538,7 +509,7 @@ class NotesTodoUI {
     container.innerHTML = this.renderTodoUI()
 
     // 注入到Tab面板
-    todoTabPane.appendChild(container)
+    tabPane.appendChild(container)
     this.todoInjected = true
 
     console.log('NotesTodoUI: 待办UI注入完成')
