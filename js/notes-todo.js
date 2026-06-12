@@ -516,37 +516,34 @@ class NotesTodoUI {
    */
   findTabPane(tabName) {
     // 方法1：通过name属性查找
-    let pane = document.querySelector(`.n-tab-pane[name="${tabName}"]`)
+    let pane = document.querySelector(`[name="${tabName}"]`)
     if (pane) return pane
 
     // 方法2：通过data属性查找
-    pane = document.querySelector(`.n-tab-pane[data-name="${tabName}"]`)
+    pane = document.querySelector(`[data-name="${tabName}"]`)
     if (pane) return pane
 
-    // 方法3：遍历所有Tab面板，通过文本内容查找
-    const tabPanes = document.querySelectorAll('.n-tab-pane')
-    for (const pane of tabPanes) {
-      // 检查Tab面板的标题
-      const tabHeader = pane.closest('.n-tabs')?.querySelector(`.n-tabs-tab[name="${tabName}"]`)
-      if (tabHeader) return pane
-
-      // 检查面板内容
-      const content = pane.textContent || pane.innerText
-      if (tabName === 'note' && content.includes('即将完善')) {
-        return pane
+    // 方法3：遍历所有元素，通过文本内容查找
+    const allElements = document.querySelectorAll('*')
+    for (const el of allElements) {
+      const content = el.textContent || el.innerText
+      if (tabName === 'note' && content === '即将完善') {
+        return el.parentElement
       }
-      if (tabName === 'more' && content.includes('还能有啥呢')) {
-        return pane
+      if (tabName === 'more' && content === '还能有啥呢 😢') {
+        return el.parentElement
       }
     }
 
-    // 方法4：通过索引查找（便签是第二个Tab，待办是第三个Tab）
-    const allPanes = document.querySelectorAll('.n-tab-pane')
-    if (tabName === 'note' && allPanes.length >= 2) {
-      return allPanes[1]
-    }
-    if (tabName === 'more' && allPanes.length >= 3) {
-      return allPanes[2]
+    // 方法4：遍历所有元素，查找包含特定文本的元素
+    for (const el of allElements) {
+      const content = el.textContent || el.innerText
+      if (tabName === 'note' && content.includes('即将完善') && el.children.length === 0) {
+        return el.parentElement
+      }
+      if (tabName === 'more' && content.includes('还能有啥呢') && el.children.length === 0) {
+        return el.parentElement
+      }
     }
 
     return null
