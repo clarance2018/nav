@@ -421,22 +421,23 @@ class NotesTodoUI {
    * @param {Element} paneWrapper - Tab面板容器
    */
   checkAndInject(paneWrapper) {
-    const paneContent = paneWrapper.textContent || ''
+    const tabPane = paneWrapper.querySelector('.n-tab-pane')
+    if (!tabPane) return
+
+    const paneContent = tabPane.textContent || ''
 
     // 检查是否是便签Tab（显示"即将完善"）
-    if (paneContent.includes('即将完善')) {
+    if (paneContent.includes('即将完善') && !tabPane.querySelector('.notes-container')) {
       console.log('NotesTodoUI: 检测到便签Tab，准备注入')
-      // 重置待办注入状态，以便切换回来时可以重新注入
-      this.todoInjected = false
-      setTimeout(() => this.injectNotesUI(), 50)
+      // 直接注入，不使用状态标记（因为Vue会覆盖注入内容）
+      this.injectNotesUI()
     }
 
     // 检查是否是待办Tab（显示"还能有啥呢"）
-    if (paneContent.includes('还能有啥呢')) {
+    if (paneContent.includes('还能有啥呢') && !tabPane.querySelector('.todo-container')) {
       console.log('NotesTodoUI: 检测到待办Tab，准备注入')
-      // 重置便签注入状态，以便切换回来时可以重新注入
-      this.notesInjected = false
-      setTimeout(() => this.injectTodoUI(), 50)
+      // 直接注入，不使用状态标记
+      this.injectTodoUI()
     }
   }
 
@@ -453,17 +454,18 @@ class NotesTodoUI {
    * 注入便签UI
    */
   injectNotesUI() {
-    if (this.notesInjected) {
-      console.log('NotesTodoUI: 便签UI已注入，跳过')
-      return
-    }
-
     console.log('NotesTodoUI: 注入便签UI...')
 
     // 获取当前活动的Tab面板
     const tabPane = this.getActiveTabPane()
     if (!tabPane) {
       console.log('NotesTodoUI: 未找到Tab面板')
+      return
+    }
+
+    // 检查是否已经有notes-container（避免重复注入）
+    if (tabPane.querySelector('.notes-container')) {
+      console.log('NotesTodoUI: 便签UI已存在，跳过')
       return
     }
 
@@ -477,7 +479,6 @@ class NotesTodoUI {
 
     // 注入到Tab面板
     tabPane.appendChild(container)
-    this.notesInjected = true
 
     console.log('NotesTodoUI: 便签UI注入完成')
   }
@@ -486,17 +487,18 @@ class NotesTodoUI {
    * 注入待办UI
    */
   injectTodoUI() {
-    if (this.todoInjected) {
-      console.log('NotesTodoUI: 待办UI已注入，跳过')
-      return
-    }
-
     console.log('NotesTodoUI: 注入待办UI...')
 
     // 获取当前活动的Tab面板
     const tabPane = this.getActiveTabPane()
     if (!tabPane) {
       console.log('NotesTodoUI: 未找到Tab面板')
+      return
+    }
+
+    // 检查是否已经有todo-container（避免重复注入）
+    if (tabPane.querySelector('.todo-container')) {
+      console.log('NotesTodoUI: 待办UI已存在，跳过')
       return
     }
 
@@ -510,7 +512,6 @@ class NotesTodoUI {
 
     // 注入到Tab面板
     tabPane.appendChild(container)
-    this.todoInjected = true
 
     console.log('NotesTodoUI: 待办UI注入完成')
   }
